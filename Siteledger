@@ -58,7 +58,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "YOUR_SCRIPT_URL_HERE"; // PASTE YOUR URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCUGZbstmrgwUs4LciscRhYB9RwlQdAMTbMLxp3yBGmVYn34RHT8uZ5UlcVEqGTFr_/exec"; // PASTE YOUR URL
     let myChart = null;
 
     function login() {
