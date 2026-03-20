@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dwellsmith ERP</title>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --earth: #4b3621; --clay: #8b4513; --sand: #f4f1ea; }
+        body { font-family: 'Times New Roman', Times, serif; background: var(--sand); color: var(--earth); padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border: 1px solid #dcd7cf; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        h2 { text-align: center; border-bottom: 2px solid var(--earth); padding-bottom: 10px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-dark { background: var(--earth); color: white; }
+        .btn-wa { background: #25D366; color: white; text-align: center; text-decoration: none; display: block; font-size: 14px; }
+        #history { margin-top: 20px; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
+        .hist-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f9f9f9; }
+        #loginGate { position: fixed; inset: 0; background: var(--earth); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+<div id="loginGate">
+    <div class="card" style="text-align: center;">
+        <h2>DWELLSMITH</h2>
+        <input type="password" id="passInput" placeholder="Password">
+        <button class="btn btn-dark" onclick="login()">LOGIN</button>
+    </div>
+</div>
+
+<div class="card" id="app" style="display:none;">
+    <h2>Dwellsmith ERP</h2>
+    
+    <div style="text-align:center;">
+        <h3 id="totalDisplay">Total: ₹0</h3>
+        <canvas id="expenseChart" width="300" height="300"></canvas>
+    </div>
+
+    <form id="erpForm">
+        <input type="date" name="date" id="dateInput">
+        <select name="category" id="cat">
+            <option value="Material">Material</option>
+            <option value="Contractor">Contractor/Labor</option>
+            <option value="Tea">Tea/Food/Fuel</option>
+        </select>
+        <input type="text" name="name" placeholder="Name (Shop/Person)" required>
+        <input type="number" name="spent" placeholder="Amount (₹)" required>
+        <button type="submit" class="btn btn-dark" id="subBtn">SAVE ENTRY</button>
+    </form>
+
+    <a href="#" class="btn btn-wa" onclick="shareReport()">SHARE REPORT WHATSAPP</a>
+
+    <div id="history">
+        <strong style="font-size: 14px;">Recent Entries:</strong>
+        <div id="histList">Loading...</div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "YOUR_SCRIPT_URL_HERE"; // PASTE YOUR URL
+    let myChart = null;
+
+    function login() {
+        // Simple password check (1234 by default)
+        if(document.getElementById('passInput').value === '1234') {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            fetchAndDraw();
+        } else { alert("Incorrect"); }
+    }
+
+    async function fetchAndDraw() {
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+        
+        // Update Total
+        document.getElementById('totalDisplay').innerText = "Total: ₹" + data.total.toLocaleString();
+
+        // Draw Pie Chart in HTML
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        if(myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Material', 'Labor', 'Misc'],
+                datasets: [{
+                    data: [data.material, data.contractor, data.misc],
+                    backgroundColor: ['#4b3621', '#8b4513', '#d2b48c']
+                }]
+            }
+        });
+
+        // Show History
+        let histHtml = "";
+        data.recent.forEach(r => {
+            histHtml += `<div class="hist-row"><span>${r.name}</span><strong>₹${r.amt}</strong></div>`;
+        });
+        document.getElementById('histList').innerHTML = histHtml;
+    }
+
+    function shareReport() {
+        const total = document.getElementById('totalDisplay').innerText;
+        const msg = encodeURIComponent(`*Dwellsmith Project Report*\n${total}\n\nLedger:\nhttps://docs.google.com/spreadsheets/d/1DACOfiTqjftYJTFK7k0Dj6noxLRGU_FAMCAF893TAFk`);
+        window.open(`https://wa.me/?text=${msg}`);
+    }
+
+    document.getElementById('erpForm').onsubmit = async (e) => {
+        e.preventDefault();
+        document.getElementById('subBtn').innerText = "Saving...";
+        const fd = new URLSearchParams(new FormData(e.target));
+        await fetch(SCRIPT_URL + "?" + fd.toString(), { method: 'POST' });
+        alert("Success!");
+        location.reload();
+    };
+
+    document.getElementById('dateInput').valueAsDate = new Date();
+</script>
+
+</body>
+</html>
